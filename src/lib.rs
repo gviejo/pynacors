@@ -1,0 +1,153 @@
+use ndarray;
+use numpy::{IntoPyArray, PyArray1, PyArray2, PyArrayDyn, PyReadonlyArrayDyn};
+use pyo3::prelude::*;
+
+/// Formats the sum of two numbers as string.
+#[pyfunction]
+fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
+    Ok((a + b).to_string())
+}
+
+#[pyfunction]
+fn is_prime(num: u32) -> bool {
+    match num {
+        0 | 1 => false,
+        _ => {
+            let limit = (num as f32).sqrt() as u32;
+            (2..=limit).any(|i| num % i == 0) == false
+        }
+    }
+}
+
+
+/// A Python module implemented in Rust.
+#[pymodule]
+fn pynakit(_py: Python, m: &PyModule) -> PyResult<()> {
+
+    #[pyfn(m)]
+    fn restrict<'py>(py: Python<'py>, 
+            t: PyReadonlyArrayDyn<f64>,
+            d: PyReadonlyArrayDyn<f64>,
+            s: PyReadonlyArrayDyn<f64>,
+            e: PyReadonlyArrayDyn<f64>) 
+            -> &'py PyArray1<f64>
+    {
+        let time_array = t.as_array();
+        let data_array = d.as_array();
+        let starts = s.as_array();
+        let ends = e.as_array();
+
+        let n = time_array.len();
+        let m = starts.len();
+
+        let mut ix = ndarray::Array::<u8,_>::zeros(n);
+
+        let mut k = 0;
+        let mut t = 0;
+
+        while ends[k] < time_array[t] {
+            k += 1;
+        }
+
+        while k < m {
+            // Outside
+            while t < n {
+                if time_array[t] >= starts[k] {
+                    break
+                }
+                t += 1;
+            }
+            // Inside
+            while t < n {
+                if time_array[t] > ends[k] {
+                    k += 1;
+                    break
+                } else {
+                    ix[t] = 1;
+                }
+                t += 1;
+            }
+            if k == m { break }
+            if t == n { break }
+        }
+
+        let tokeep = ix.sum() as usize;        
+        let mut new_time_array = ndarray::Array::<f64,_>::zeros(tokeep);
+        let mut new_data_array = ndarray::Array::<f64,_>::zeros(tokeep);
+        k = 0;
+
+        println!("{:?}", tokeep);
+        println!("{:?}", new_time_array.len());
+
+        for i in 0..n-1 {            
+            if ix[i] == 1 {
+                println!("{:?}", k);
+                new_time_array[k] = time_array[i];
+                new_data_array[k] = data_array[i];
+                k += 1;
+            }
+        }
+
+        new_time_array.into_pyarray(py)
+
+    }
+
+    #[pyfn(m)]
+    fn max_min<'py>(py: Python<'py>, x: PyReadonlyArrayDyn<f64>) -> &'py PyArray1<f64> {
+        let array = x.as_array();
+        let result_array = rust_fn::max_min(&array);
+        result_array.into_pyarray(py)   
+    }
+
+    #[pyfn(m)]
+    fn double_and_random_perturbation(_py: Python<'_>, x: &PyArrayDyn<f64>, perturbation_scaling: f64) {
+        let mut array = unsafe {x.as_array_mut()};
+        rust_fn::double_and_random_perturbation(&mut array, perturbation_scaling);
+    }
+
+    #[pyfn(m)]
+    fn eye<'py>(py: Python<'py>, size: usize) -> &PyArray2<f64> {
+        let array = ndarray::Array::eye(size);
+        array.into_pyarray(py)
+    }
+
+    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
+    m.add_function(wrap_pyfunction!(is_prime, m)?)?;
+    Ok(())
+}
+
+
+
+// Rust funtions
+mod rust_fn {
+    use ndarray::{arr1, Array1};
+    use numpy::ndarray::{ArrayViewD, ArrayViewMutD};
+    use ordered_float::OrderedFloat;
+    use rand::Rng;
+
+    pub fn double_and_random_perturbation(x: &mut ArrayViewMutD<'_, f64>, scaling: f64) {
+        let mut rng = rand::thread_rng();
+        x.iter_mut()
+            .for_each(|x| *x = *x * 2. + (rng.gen::<f64>() - 0.5) * scaling);
+    }
+
+    pub fn max_min(x: &ArrayViewD<'_, f64>) -> Array1<f64> {
+        if x.len() == 0 {
+            return arr1(&[]);
+        }
+        let max_val = x
+            .iter()
+            .map(|a| OrderedFloat(*a))
+            .max()
+            .expect("Error calculating max value")
+            .0;
+        let min_val = x
+            .iter()
+            .map(|a| OrderedFloat(*a))
+            .min()
+            .expect("Error calculating max value")
+            .0;
+        let result_array = arr1(&[max_val, min_val]);
+        result_array
+    } 
+}
