@@ -17,3 +17,6 @@ ordered-float = "2.10.0"
 [dependencies.pyo3]
 version = "0.15.1"
 features = ["extension-module"]
+
+[profile.release]
+lto = true

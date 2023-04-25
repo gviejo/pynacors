@@ -29,8 +29,8 @@ fn pynakit(_py: Python, m: &PyModule) -> PyResult<()> {
             t: PyReadonlyArrayDyn<f64>,
             d: PyReadonlyArrayDyn<f64>,
             s: PyReadonlyArrayDyn<f64>,
-            e: PyReadonlyArrayDyn<f64>) 
-            -> &'py PyArray1<f64>
+            e: PyReadonlyArrayDyn<f64>)
+            -> (&'py PyArray1<f64>, &'py PyArray1<f64>)
     {
         let time_array = t.as_array();
         let data_array = d.as_array();
@@ -41,9 +41,9 @@ fn pynakit(_py: Python, m: &PyModule) -> PyResult<()> {
         let m = starts.len();
 
         let mut ix = ndarray::Array::<u8,_>::zeros(n);
-
         let mut k = 0;
         let mut t = 0;
+        let mut tokeep = 0;
 
         while ends[k] < time_array[t] {
             k += 1;
@@ -64,31 +64,26 @@ fn pynakit(_py: Python, m: &PyModule) -> PyResult<()> {
                     break
                 } else {
                     ix[t] = 1;
+                    tokeep += 1;
                 }
                 t += 1;
             }
             if k == m { break }
             if t == n { break }
         }
-
-        let tokeep = ix.sum() as usize;        
+        
         let mut new_time_array = ndarray::Array::<f64,_>::zeros(tokeep);
         let mut new_data_array = ndarray::Array::<f64,_>::zeros(tokeep);
         k = 0;
-
-        println!("{:?}", tokeep);
-        println!("{:?}", new_time_array.len());
-
-        for i in 0..n-1 {            
-            if ix[i] == 1 {
-                println!("{:?}", k);
+        for i in 0..n {
+            if ix[i] == 1 {                
                 new_time_array[k] = time_array[i];
                 new_data_array[k] = data_array[i];
                 k += 1;
             }
         }
 
-        new_time_array.into_pyarray(py)
+        (new_time_array.into_pyarray(py), new_data_array.into_pyarray(py))
 
     }
 

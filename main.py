@@ -2,12 +2,13 @@
 # @Author: gviejo
 # @Date:   2023-04-16 19:00:21
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-04-16 22:08:01
+# @Last Modified time: 2023-04-24 16:50:28
 import pynakit as nak
 import numpy as np
 from matplotlib.pyplot import *
 from numba import jit
 from time import time
+import pynacore as nac
 
 def restrict(time_array, data_array, starts, ends):
     """
@@ -126,35 +127,44 @@ def jitrestrict(time_array, data_array, starts, ends):
     return (new_time_array, new_data_array)
 
 
-# tpython = []
+tpython = []
 tnumba = []
 trust = []
-# for n in range(100, 10000000, 100000):
-for n in [10000]:
-	print(n)
-	# n = 100000
-	starts = np.sort(np.random.uniform(0, 1000, n))
-	ends = starts + np.random.uniform(1, 10, n)
-	t = np.sort(np.random.uniform(0, 1000, n*2))
-	d = np.random.rand(n*2)
+tcython = []
+for n in range(1000, 1000000, 100000):
+# for n in [10000]:
+    print(n)
+    # n = 100000
+    starts = np.sort(np.random.uniform(0, 1000, n))
+    ends = starts + np.random.uniform(1, 10, n)
+    t = np.sort(np.random.uniform(0, 1000, n*2))
+    d = np.random.rand(n*2)
 
-	# t1=time()
-	# a = restrict(t, d, starts, ends)
-	# tpython = time() - t1
+    # t1=time()
+    # a = restrict(t, d, starts, ends)
+    # tpython.append(time() - t1)
+
+    # jitrestrict(t, d, starts, ends)
+    t1=time()
+    a = jitrestrict(t, d, starts, ends)
+    tnumba.append(time() - t1)
+
+    t1=time()
+    a = nak.restrict(t, d, starts, ends)
+    trust.append(time() - t1)
+
+    t1=time()
+    a = nac.restrict(t, d, starts, ends)
+    tcython.append(time() - t1)
 
 
-	# jitrestrict(t, d, starts, ends)
-	t1=time()
-	a = jitrestrict(t, d, starts, ends)
-	tnumba.append(time() - t1)
-
-	t1=time()
-	a = nak.restrict(t, d, starts, ends)
-	trust.append(time() - t1)
-
+# print("numba", tnumba)
+# print("rust", trust)
 
 figure()
 plot(tnumba[1:], label = "numba")
 plot(trust[1:], label = "rust")
+plot(tcython[1:], label = "cython")
+plot(tpython[1:], label = "python")
 legend()
 show()
