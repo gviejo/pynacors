@@ -1,1 +1,1 @@
-# pynakit
+# pynacore
