@@ -230,7 +230,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pynakit"
+name = "pynacore"
 version = "0.1.0"
 dependencies = [
  "ndarray",

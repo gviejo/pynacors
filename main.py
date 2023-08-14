@@ -2,13 +2,13 @@
 # @Author: gviejo
 # @Date:   2023-04-16 19:00:21
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-04-24 16:50:28
-import pynakit as nak
+# @Last Modified time: 2023-05-18 09:35:02
+import pynacore as nak
 import numpy as np
 from matplotlib.pyplot import *
 from numba import jit
 from time import time
-import pynacore as nac
+# import pynacore as nac
 
 def restrict(time_array, data_array, starts, ends):
     """
@@ -127,18 +127,27 @@ def jitrestrict(time_array, data_array, starts, ends):
     return (new_time_array, new_data_array)
 
 
-tpython = []
+"""
+Commands :
+
+maturin build --release
+python setup.py build_ext --inplace
+
+"""
+
+
+# tpython = []
 tnumba = []
 trust = []
-tcython = []
-for n in range(1000, 1000000, 100000):
+
+for n in range(1000, 10000000, 500000):
 # for n in [10000]:
     print(n)
     # n = 100000
-    starts = np.sort(np.random.uniform(0, 1000, n))
-    ends = starts + np.random.uniform(1, 10, n)
-    t = np.sort(np.random.uniform(0, 1000, n*2))
-    d = np.random.rand(n*2)
+    starts = np.sort(np.random.uniform(0, 1000, n)).astype('float64')
+    ends = starts + np.random.uniform(1, 10, n).astype('float64')
+    t = np.sort(np.random.uniform(0, 1000, n*2)).astype('float64')
+    d = np.random.rand(n*2).astype('float64')
 
     # t1=time()
     # a = restrict(t, d, starts, ends)
@@ -153,9 +162,9 @@ for n in range(1000, 1000000, 100000):
     a = nak.restrict(t, d, starts, ends)
     trust.append(time() - t1)
 
-    t1=time()
-    a = nac.restrict(t, d, starts, ends)
-    tcython.append(time() - t1)
+    # t1=time()
+    # a = nac.restrict(t, d, starts, ends)
+    # tcython.append(time() - t1)
 
 
 # print("numba", tnumba)
@@ -164,7 +173,10 @@ for n in range(1000, 1000000, 100000):
 figure()
 plot(tnumba[1:], label = "numba")
 plot(trust[1:], label = "rust")
-plot(tcython[1:], label = "cython")
-plot(tpython[1:], label = "python")
+# plot(tcython[1:], label = "cython")
+# plot(tpython[1:], label = "python")
+ylabel("Time (s)")
+xlabel("Size")
+title("restrict")
 legend()
 show()

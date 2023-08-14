@@ -1,5 +1,6 @@
+use numpy::PyReadonlyArrayDyn;
 use ndarray;
-use numpy::{IntoPyArray, PyArray1, PyArray2, PyArrayDyn, PyReadonlyArrayDyn};
+use numpy::{IntoPyArray, PyArray1, PyArray2, PyArrayDyn, PyReadonlyArray1};
 use pyo3::prelude::*;
 
 /// Formats the sum of two numbers as string.
@@ -22,28 +23,28 @@ fn is_prime(num: u32) -> bool {
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn pynakit(_py: Python, m: &PyModule) -> PyResult<()> {
+fn pynacore(_py: Python, m: &PyModule) -> PyResult<()> {
 
     #[pyfn(m)]
-    fn restrict<'py>(py: Python<'py>, 
-            t: PyReadonlyArrayDyn<f64>,
-            d: PyReadonlyArrayDyn<f64>,
-            s: PyReadonlyArrayDyn<f64>,
-            e: PyReadonlyArrayDyn<f64>)
-            -> (&'py PyArray1<f64>, &'py PyArray1<f64>)
+    fn restrict<'py>(_py: Python<'py>, 
+            t: PyReadonlyArray1<f64>,
+            d: PyReadonlyArray1<f64>,
+            s: PyReadonlyArray1<f64>,
+            e: PyReadonlyArray1<f64>)
+            // -> (&'py PyArray1<f64>, &'py PyArray1<f64>)
     {
         let time_array = t.as_array();
         let data_array = d.as_array();
         let starts = s.as_array();
         let ends = e.as_array();
 
-        let n = time_array.len();
-        let m = starts.len();
+        let n = time_array.len() as usize;
+        let m = starts.len() as usize;
 
         let mut ix = ndarray::Array::<u8,_>::zeros(n);
-        let mut k = 0;
-        let mut t = 0;
-        let mut tokeep = 0;
+        let mut k = 0 as usize;
+        let mut t = 0 as usize;
+        let mut tokeep = 0 as usize;
 
         while ends[k] < time_array[t] {
             k += 1;
@@ -83,7 +84,7 @@ fn pynakit(_py: Python, m: &PyModule) -> PyResult<()> {
             }
         }
 
-        (new_time_array.into_pyarray(py), new_data_array.into_pyarray(py))
+        // (new_time_array.into_pyarray(py), new_data_array.into_pyarray(py))
 
     }
 
