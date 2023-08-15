@@ -23,7 +23,7 @@ fn is_prime(num: u32) -> bool {
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn pynacore(_py: Python, m: &PyModule) -> PyResult<()> {
+fn pynacors(_py: Python, m: &PyModule) -> PyResult<()> {
 
     #[pyfn(m)]
     fn restrict<'py>(_py: Python<'py>, 
